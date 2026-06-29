@@ -1,5 +1,8 @@
 Project Name :- Fraud Detection Engine
 
+Candidate Name: Shubham Mangesh Manchekar
+Intern ID: CITS5008
+
 "Real-time transactional fraud engine using Kafka & ML. (Note: Download creditcard.csv from Kaggle due to GitHub file size limits)."
 
 Description: An enterprise-grade financial security pipeline that flags fraudulent credit card transactions instantly.
