@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STANDALONE FRAUD RISK MONITORING CENTER</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .ticker-row { transition: all 0.3s ease; animation: slideIn 0.4s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
+
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <span class="text-2xl">🛡️</span>
+                <h1 class="text-xl font-bold tracking-wider text-slate-100">BANKING INCIDENT INTERCEPTION PLATFORM</h1>
+            </div>
+            <div id="connection-badge" class="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                Awaiting Connection Pipeline...
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-8">
+        
+        <div id="fraud-emergency-zone" class="hidden mb-8 p-6 bg-red-950/40 border-2 border-red-500 rounded-xl animate-pulse flex items-center space-x-4">
+            <div class="text-4xl">🚨</div>
+            <div class="flex-1">
+                <h3 class="text-lg font-bold text-red-400 uppercase tracking-wide">CRITICAL SECURITY FRAUD INTERCEPTED</h3>
+                <p id="emergency-details-text" class="text-sm text-slate-300 mt-1"></p>
+            </div>
+            <button onclick="clearEmergencyAlert()" class="bg-red-600 hover:bg-red-500 text-white font-bold text-xs px-4 py-2 rounded uppercase tracking-wider transition">
+                Acknowledge & Clear
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-xl">
+                <p class="text-xs font-semibold text-slate-400 tracking-wider uppercase">TOTAL PROCESSED SWIPES</p>
+                <p id="count-total" class="text-3xl font-bold mt-2 text-blue-400">0</p>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-xl">
+                <p class="text-xs font-semibold text-slate-400 tracking-wider uppercase">CLEARED SAFE TRANSACTIONS</p>
+                <p id="count-safe" class="text-3xl font-bold mt-2 text-emerald-400">0</p>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-xl">
+                <p class="text-xs font-semibold text-slate-400 tracking-wider uppercase">FRAUD BLOCKED INCIDENTS</p>
+                <p id="count-fraud" class="text-3xl font-bold mt-2 text-red-500">0</p>
+            </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+            <div class="px-6 py-4 border-b border-slate-800 bg-slate-900/80 flex justify-between items-center">
+                <h2 class="text-sm font-semibold text-slate-300 tracking-wider uppercase">LIVE SYSTEM TRANSACTION TELEMETRY</h2>
+                <span class="text-xs text-slate-500 italic">Streaming line-by-line metrics...</span>
+            </div>
+            <div id="ticker-box" class="p-6 max-h-[480px] overflow-y-auto space-y-3">
+                <p class="text-slate-500 text-sm italic text-center py-8">Awaiting connection pipeline sequence stream event keys...</p>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        let totalCount = 0;
+        let safeCount = 0;
+        let fraudCount = 0;
+
+        const tickerContainer = document.getElementById("ticker-box");
+        const badge = document.getElementById("connection-badge");
+
+        // Establish connection to standalone custom port 8050 web server
+        const socket = new WebSocket("ws://127.0.0.1:8050/ws/fraud-stream");
+
+        socket.onopen = function() {
+            badge.innerText = "CONNECTED REAL-TIME SHIELD ACTIVE";
+            badge.className = "px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+            tickerContainer.innerHTML = ""; // Flush template strings placeholder text
+        };
+
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            
+            // Increment counters globally
+            totalCount++;
+            document.getElementById("count-total").innerText = totalCount;
+
+            const timeString = new Date().toLocaleTimeString();
+            const row = document.createElement("div");
+
+            if(data.is_fraud === 1) {
+                fraudCount++;
+                document.getElementById("count-fraud").innerText = fraudCount;
+
+                // Fire Emergency Banner Visual Alert Control Hooks
+                document.getElementById("fraud-emergency-zone").classList.remove("hidden");
+                document.getElementById("emergency-details-text").innerText = `Account Ref ID #${data.account_id} attempted a high-risk charge of $${data.amount}. Machine Learning Model flag isolated with ${data.confidence}% validation confidence tracking score metrics.`;
+
+                // Render dynamic red row to ledger
+                row.className = "ticker-row flex items-center justify-between p-4 bg-red-950/30 border border-red-500/40 rounded-lg text-red-200 font-mono text-sm";
+                row.innerHTML = `<span>[${timeString}] 🚨 SYSTEM ALERT: FRAUD INTERCEPTED -> Account #${data.account_id}</span>
+                                 <div class="flex items-center space-x-4">
+                                     <span class="font-bold text-red-400">$${data.amount}</span>
+                                     <span class="bg-red-500 text-slate-950 font-sans font-bold text-xs px-2 py-0.5 rounded uppercase tracking-wider">BLOCKED</span>
+                                 </div>`;
+            } else {
+                safeCount++;
+                document.getElementById("count-safe").innerText = safeCount;
+
+                // Render normal green row to transaction ledger
+                row.className = "ticker-row flex items-center justify-between p-4 bg-slate-950 border border-slate-800/60 rounded-lg text-slate-300 font-mono text-sm";
+                row.innerHTML = `<span>[${timeString}] Ingestion Stream Check -> Account #${data.account_id} verified clear</span>
+                                 <div class="flex items-center space-x-4">
+                                     <span class="font-semibold text-slate-100">$${data.amount}</span>
+                                     <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs px-2 py-0.5 rounded uppercase tracking-wider">APPROVED</span>
+                                 </div>`;
+            }
+
+            // Push element directly to top of live command ledger ticker box
+            tickerContainer.insertBefore(row, tickerContainer.firstChild);
+
+            // Housekeeping: Prevent structural browser memory memory leakage over time by trimming list depth
+            if(tickerContainer.children.length > 50) {
+                tickerContainer.removeChild(tickerContainer.lastChild);
+            }
+        };
+
+        socket.onclose = function() {
+            badge.innerText = "DISCONNECTED SHIELD OFFLINE";
+            badge.className = "px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest bg-red-500/20 text-red-400 border border-red-500/30";
+        };
+
+        function clearEmergencyAlert() {
+            document.getElementById("fraud-emergency-zone").classList.add("hidden");
+        }
+    </script>
+</body>
+</html>
